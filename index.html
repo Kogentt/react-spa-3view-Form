@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>React SPA</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1; user-scalable=yes">
+        <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>  
+        <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+        <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    </head>
+    <body>
+        <div id="container"></div>
+
+        <script type="text/babel">
+        class MasterForm extends React.Component {
+            constructor(props) {
+              super(props)
+              this.state = {
+                currentStep: 1,
+                firstname:  '',
+                lastname: '',
+                dateofbirth: '',
+                cardnumber: '',
+                gender: '',
+                text: '',
+                formErrors: {firstname: '', lastname: '', cardnumber: ''},
+                formValid: false
+              }
+            }
+          
+            handleChange = event => {
+              const {name, value} = event.target
+              this.setState({
+                [name]: value
+              })    
+            }
+             
+            handleSubmit = event => {
+              event.preventDefault()
+              const { firstname, lastname, dateofbirth, cardnumber, gender } = this.state
+              const summarytext = [`First name: ${firstname}`,
+                `Last name: ${lastname}`,
+                `DOB: ${dateofbirth}`,
+                `Card #: ${cardnumber}`,
+                `Gender: ${gender}`]
+              if (this.handleValidation()) {
+                this.setState({
+                  currentStep: 3,
+                  text: summarytext
+                });
+              }
+              else {
+                alert("Form has errors included");
+              }
+            }
+
+            handleValidation() {
+              const { firstname, lastname, dateofbirth, cardnumber } = this.state
+              const formErrors = {firstname: '', lastname: '', cardnumber: ''}
+              let formValid = true;
+
+              if(!firstname) {
+                formValid = false;
+                formErrors["firstname"] = "First name field cannot be empty";
+              }
+
+              if(typeof firstname !== "undefined"){
+                if(!firstname.match(/^[a-zA-Z]+$/)){
+                  formValid = false;
+                  formErrors["firstname"] = "First name may only consist of letters";
+                }
+              }
+
+              if(!lastname) {
+                formValid = false;
+                formErrors["lastname"] = "Last name field cannot be empty";
+              }
+
+              if(typeof lastname !== "undefined"){
+                if(!lastname.match(/^[a-zA-Z]+$/)){
+                  formValid = false;
+                  formErrors["lastname"] = "Last name may only consist of letters";
+                }
+              }
+
+              if(!cardnumber) {
+                formValid = false;
+                formErrors["cardnumber"] = "Card number cannot be empty"
+              }
+
+              if(typeof cardnumber !== "undefined"){
+                if(!cardnumber.match(/^[0-9]+$/)){
+                  formValid = false;
+                  formErrors["cardnumber"] = "Card number may only consist of numbers"
+                }
+                else if(!cardnumber.length == 10){
+                  formValid = false;
+                  formErrors["cardnumber"] = "Card number must be 10 digits long"
+                }
+              }
+
+              let nSum = 0;
+              let isSecond = false;
+              for (let i = 9; i >= 0; i--){
+                let d = cardnumber[i].charCodeAt() - '0'.charCodeAt();
+
+                if (isSecond == true){
+                  d = d * 2;
+                }
+
+                nSum += parseInt(d / 10, 10);
+                nSum += d % 10;
+
+                isSecond = !isSecond;
+              }
+              if (nSum % 10 !== 0){
+                formValid = false;
+                formErrors["cardnumber"] = "Card number failed mod10 validation"
+              }
+
+              this.setState({
+                formErrors: formErrors
+              });
+
+              return formValid;
+            }
+            
+            _next = () => {
+              let currentStep = this.state.currentStep
+              currentStep = currentStep >= 2? 3: currentStep + 1
+              this.setState({
+                currentStep: currentStep
+              })
+            }
+              
+            _prev = () => {
+              let currentStep = this.state.currentStep
+              currentStep = currentStep <= 1? 1: currentStep - 1
+              this.setState({
+                currentStep: currentStep
+              })
+            }
+          
+          /*
+          * the functions for our button
+          */
+          previousButton() {
+            let currentStep = this.state.currentStep;
+            if(currentStep !==1){
+              return (
+                <button 
+                  className="btn btn-secondary" 
+                  type="button" onClick={this._prev}>
+                Previous
+                </button>
+              )
+            }
+            return null;
+          }
+          
+          nextButton(){
+            let currentStep = this.state.currentStep;
+            if(currentStep <2){
+              return (
+                <button 
+                  className="btn btn-primary float-right" 
+                  type="button" onClick={this._next}>
+                Next
+                </button>        
+              )
+            }
+            return null;
+          }
+            
+            render() {    
+              return (
+                <React.Fragment>
+                  <h1>Multi-step Form</h1>
+                  <p>Step {this.state.currentStep} </p> 
+            
+                  <form onSubmit={this.handleSubmit}>
+                    <Step1 
+                      currentStep={this.state.currentStep} 
+                      handleChange={this.handleChange}
+                      firstname={this.state.firstname}
+                      lastname={this.state.lastname}
+                      formErrors={this.state.formErrors}
+                    />
+                    <Step2 
+                      currentStep={this.state.currentStep} 
+                      handleChange={this.handleChange}
+                      dateofbirth={this.state.dateofbirth}
+                      cardnumber={this.state.cardnumber}
+                      gender={this.state.gender}
+                      formErrors={this.state.formErrors}
+                    />
+                    <Step3 
+                      currentStep={this.state.currentStep}
+                      handleChange={this.handleChange}
+                      text={this.state.text}
+                    />
+                    {this.previousButton()}
+                    {this.nextButton()}
+                  </form>
+                </React.Fragment>
+              );
+            }
+          }
+          
+          function Step1(props) {
+            if (props.currentStep !== 1) {
+              return null
+            } 
+            return(
+              <div className="form-group">
+                <label htmlFor="firstname">First Name </label>
+                <input
+                  className="form-control"
+                  id="firstName"
+                  name="firstname"
+                  type="text"
+                  placeholder="Enter first name"
+                  value={props.firstname}
+                  onChange={props.handleChange}
+                />
+                <div className="error">{props.formErrors["firstname"]}</div>
+                <label htmlFor="lastname">Last Name </label>
+                <input
+                  className="form-control"
+                  id="lastName"
+                  name="lastname"
+                  type="text"
+                  placeholder="Enter last name"
+                  value={props.lastname}
+                  onChange={props.handleChange}
+                />
+                <div className="error">{props.formErrors["lastname"]}</div>
+              </div>
+            );
+          }
+          
+          function Step2(props) {
+            if (props.currentStep !== 2) {
+              return null
+            } 
+            return(
+              <React.Fragment>
+                <div className="error">{props.formErrors["firstname"]}</div>
+                <div className="error">{props.formErrors["lastname"]}</div>
+                <div className="form-group">
+                  <label htmlFor="dateofbirth">Date of birth </label>
+                  <input
+                    className="form-control"
+                    id="dateofbirth"
+                    name="dateofbirth"
+                    type="date"
+                    value={props.dateofbirth}
+                    onChange={props.handleChange}
+                  />
+                  <label htmlFor="cardnumber">Health Card Number </label>
+                  <input
+                    className="form-control"
+                    id="cardnumber"
+                    name="cardnumber"
+                    type="text"
+                    minLength="10"
+                    maxLength="10"
+                    value={props.cardnumber}
+                    onChange={props.handleChange}
+                  />
+                  <div className="error">{props.formErrors["cardnumber"]}</div>
+                  <div>
+                    <label htmlFor="gender">Gender </label>
+                    <div>
+                      <div>
+                        <label>
+                          <input
+                            className="form-control"
+                            id="gendermale"
+                            name="gender"
+                            type="radio"
+                            value="Male"
+                            checked={props.gender === "Male"}
+                            onChange={props.handleChange}
+                          />
+                          Male
+                        </label>
+                      </div>
+                      <div>
+                        <label>
+                          <input
+                            className="form-control"
+                            id="genderfemale"
+                            name="gender"
+                            type="radio"
+                            value="Female"
+                            checked={props.gender === "Female"}
+                            onChange={props.handleChange}
+                          />
+                          Female
+                        </label>
+                      </div>
+                      <div>
+                        <label>
+                          <input
+                            className="form-control"
+                            id="genderother"
+                            name="gender"
+                            type="radio"
+                            value="Other"
+                            checked={props.gender === "Other"}
+                            onChange={props.handleChange}
+                          />
+                          Other
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button className="btn btn-success btn-block">Submit</button>
+              </React.Fragment>
+            );
+          }
+          
+          function Step3(props) {
+            if (props.currentStep !== 3) {
+              return null
+            } 
+            return(
+              <div className="form-group">
+                <label htmlFor="summary">Your detail summary:</label>
+                {props.text.map(item => <li key={item}>{item}</li>)}
+              </div>
+            );
+          }
+          
+          ReactDOM.render(<MasterForm />, document.getElementById('container'))
+        </script>
+    </body>
+</html>
